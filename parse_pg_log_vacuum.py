@@ -6,6 +6,7 @@
 
 import sys
 import re
+#import regex
 
 pg_log_file_name = str(sys.argv[1])
 # pg_log_file_name = 'test.log'
@@ -16,6 +17,7 @@ autovacuum_data_pattern = r'automatic vacuum of table\s\"(?P<dbname>\w+)\.(?P<sc
 
 re_log_entry = re.compile(log_entry_pattern, re.MULTILINE)
 re_log_autovacuum = re.compile(log_autovacuum_pattern)
+#re_autovacuum_data = regex.compile(autovacuum_data_pattern, re.MULTILINE)
 re_autovacuum_data = re.compile(autovacuum_data_pattern, re.MULTILINE)
 
 
@@ -46,13 +48,14 @@ with open(pg_log_file_name, 'r') as logfile:
 def parse_autovacuum(log_timestamp, vacuum_data):
     autovacuum_data = re_autovacuum_data.search(vacuum_data)
     print(
-            '%s\t%s.%s.%s: removed: %s pages, %s tuples' % (
+            '%s\t%s.%s.%s: removed: %s pages, %s tuples, unknown entries: %s' % (
                   log_timestamp
                 , autovacuum_data.group('dbname')
                 , autovacuum_data.group('schemaname')
                 , autovacuum_data.group('tablename')
                 , autovacuum_data.group('vacuum_pages_removed')                
                 , autovacuum_data.group('vacuum_tuples_removed')
+                , autovacuum_data.group('unknown')
             )
     )
 
