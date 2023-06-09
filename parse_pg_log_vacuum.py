@@ -2,12 +2,9 @@
 # coding: utf-8
 
 import sys
+import os
 import re
-from signal import signal, SIGPIPE, SIG_DFL
 #import regex
-
-pg_log_file_name = str(sys.argv[1])
-# pg_log_file_name = 'test.log'
 
 log_entry_pattern = r'''
     (?P<log_entry>^
@@ -70,11 +67,6 @@ autovacuum_data_pattern = r'''
     )
 '''
 
-re_log_entry = re.compile(log_entry_pattern, re.MULTILINE | re.VERBOSE)
-re_log_autovacuum = re.compile(log_autovacuum_pattern)
-#re_autovacuum_data = regex.compile(autovacuum_data_pattern, re.MULTILINE)
-re_autovacuum_data = re.compile(autovacuum_data_pattern, re.MULTILINE | re.VERBOSE)
-
 def parse_autovacuum(log_timestamp, vacuum_data):
     autovacuum_data = re_autovacuum_data.search(vacuum_data)
     if autovacuum_data:
@@ -90,15 +82,29 @@ def parse_autovacuum(log_timestamp, vacuum_data):
                 )
         )
 
-signal(SIGPIPE,SIG_DFL)
+def main():
+    # https://docs.python.org/3/library/signal.html#note-on-sigpipe
+    # https://stackoverflow.com/questions/14207708/ioerror-errno-32-broken-pipe-when-piping-prog-py-othercmd
+    try:
+        with open(sys.argv[1], 'r') if (len(sys.argv) > 1 and sys.argv[1] != "-") else sys.stdin as logfile:
+            pg_log_file = logfile.read()
 
-with open(pg_log_file_name, 'r') as logfile:
-    pg_log_file = logfile.read()
+            for m in re_log_entry.finditer(pg_log_file):
+                log_msg = m.group('log_msg')
+                # print(log_msg)
+                        
+                if ( log_msg and re_log_autovacuum.match(log_msg) ):
+                    parse_autovacuum(m.group('log_entry_timestamp'), log_msg)
+        sys.stdout.flush()
+    except (BrokenPipeError, KeyboardInterrupt):
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        os.dup2(devnull, sys.stdout.fileno())
+        sys.exit(1)  # Python exits with error code 1 on EPIPE
 
-    for m in re_log_entry.finditer(pg_log_file):
-        log_msg = m.group('log_msg')
-        # print(log_msg)
-                
-        if ( log_msg and re_log_autovacuum.match(log_msg) ):
-            parse_autovacuum(m.group('log_entry_timestamp'), log_msg)
+re_log_entry = re.compile(log_entry_pattern, re.MULTILINE | re.VERBOSE)
+re_log_autovacuum = re.compile(log_autovacuum_pattern)
+#re_autovacuum_data = regex.compile(autovacuum_data_pattern, re.MULTILINE)
+re_autovacuum_data = re.compile(autovacuum_data_pattern, re.MULTILINE | re.VERBOSE)
 
+if __name__ == '__main__':
+    main()
