@@ -76,7 +76,7 @@ def parse_autovacuum(log_timestamp, vacuum_data):
                     , autovacuum_data.group('dbname')
                     , autovacuum_data.group('schemaname')
                     , autovacuum_data.group('tablename')
-                    , autovacuum_data.group('vacuum_pages_removed')                
+                    , autovacuum_data.group('vacuum_pages_removed')
                     , autovacuum_data.group('vacuum_tuples_removed')
                     , autovacuum_data.group('unknown')
                 )
@@ -92,7 +92,7 @@ def main():
             for m in re_log_entry.finditer(pg_log_file):
                 log_msg = m.group('log_msg')
                 # print(log_msg)
-                        
+
                 if ( log_msg and re_log_autovacuum.match(log_msg) ):
                     parse_autovacuum(m.group('log_entry_timestamp'), log_msg)
         sys.stdout.flush()
