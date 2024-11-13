@@ -89,11 +89,29 @@ autovacuum_data_pattern = r'''automatic\svacuum\sof\stable\s+
             # |(?:\n\s*(?P<vacuum_system_usage>system\s+usage:\s+.*))
             # |(?:\n\s*(?P<unknown>[^:]+:\s+.*))
 
-
+def print_header():
+    # initial_columns = ['timestamp']
+    # parsed_columns = list(re_autovacuum_data.groupindex.keys())
+    # print(', '.join(map(str, initial_columns + parsed_columns)))
+    column_names = [
+              'timestamp'
+            , 'fqtn'
+            , 'index_scans'
+            , 'vacuum_pages_removed'
+            , 'vacuum_pages_remain'
+            , 'vacuum_pages_scanned'
+            , 'vacuum_pages_scanned_pct'
+            , 'vacuum_tuples_removed'
+            , 'vacuum_tuples_remain'
+            , 'vacuum_tuples_dead_nr'
+            , 'removable_cutoff_txid'
+            , 'removable_cutoff_xids_age'
+            ]
+    print(', '.join(column_names))
 
 def parse_autovacuum(autovacuum_log):
     log_ts = datetime.strptime(autovacuum_log["timestamp"], log_ts_format)
-    log_timestamp = log_ts.strftime('%Y-%m-%d, %H, %M')
+    log_timestamp = log_ts.strftime('%Y-%m-%d %H:%M:%S')
     # log_timestamp = log_ts.strftime('%Y-%m-%d %H:%M:%S.%f %Z')
     autovacuum_data = re_autovacuum_data.search(autovacuum_log["message"])
     # print(type(autovacuum_log["message"]))
@@ -130,6 +148,7 @@ def parse_autovacuum(autovacuum_log):
 def main():
     # https://docs.python.org/3/library/signal.html#note-on-sigpipe
     # https://stackoverflow.com/questions/14207708/ioerror-errno-32-broken-pipe-when-piping-prog-py-othercmd
+    print_header()
     try:
         with open(sys.argv[1], 'r') if (len(sys.argv) > 1 and sys.argv[1] != "-") else sys.stdin as logfile:
 
